@@ -202,7 +202,7 @@ const customParser: ParserFunction = () => { /* ... */ };
 const search = new URLSearchParams(`?ids[]=id1&ids[]=id2`);
 const { ids } = zx.parseQuery(
   request,
-  { ids: z.array(z.string()) })
+  { ids: z.array(z.string()) }
   { parser: customParser }
 );
 
