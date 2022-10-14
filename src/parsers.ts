@@ -1,8 +1,9 @@
-import { z, ZodType } from "zod";
-import type { ZodRawShape, ZodTypeAny } from "zod";
-import type { LoaderArgs } from "@remix-run/node";
+import type { LoaderArgs } from '@remix-run/node';
+import { FormData } from '@remix-run/node';
+import type { ZodRawShape, ZodTypeAny } from 'zod';
+import { z, ZodType } from 'zod';
 
-type Params = LoaderArgs["params"];
+type Params = LoaderArgs['params'];
 
 type Options = {
   /**
@@ -57,8 +58,18 @@ export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
  * @param request - A Request
  * @param schema - A Zod object shape or object schema to validate.
  */
-export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
+export function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
+  formData: FormData,
+  schema: T,
+  options?: Options
+): Promise<ParsedData<T>>;
+export function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
   request: Request,
+  schema: T,
+  options?: Options
+): Promise<ParsedData<T>>;
+export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
+  request: Request | FormData,
   schema: T,
   options?: Options
 ): Promise<ParsedData<T>> {
@@ -81,10 +92,11 @@ type SearchParamsParser = (searchParams: URLSearchParams) => ParsedSearchParams;
  * Get the form data from a request as an object.
  */
 async function parseFormData(
-  request: Request,
+  request: Request | FormData,
   customParser?: SearchParamsParser
 ) {
-  const formData = await request.clone().formData();
+  const formData =
+    request instanceof FormData ? request : await request.clone().formData();
   // @ts-ignore: the types are wrong here. see: https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams/URLSearchParams
   return parseSearchParams(new URLSearchParams(formData), customParser);
 }

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { zx } from './';
 import type { LoaderArgs } from '@remix-run/node';
 import { FormData, Request } from '@remix-run/node';
 import { z } from 'zod';
+import { zx } from './';
 
 type Params = LoaderArgs['params'];
 
@@ -160,6 +160,13 @@ describe('parseForm', () => {
   test('parses FormData from Request using a schema', async () => {
     const request = createFormRequest();
     const result = await zx.parseForm(request, schema);
+    expect(result).toStrictEqual(formResult);
+    type verify = Expect<Equal<typeof result, Result>>;
+  });
+
+  test('parses FormData from FormData using a schema', async () => {
+    const formData = await createFormRequest().formData();
+    const result = await zx.parseForm(formData, schema);
     expect(result).toStrictEqual(formResult);
     type verify = Expect<Equal<typeof result, Result>>;
   });
