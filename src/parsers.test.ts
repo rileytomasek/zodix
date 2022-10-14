@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { LoaderArgs } from '@remix-run/node';
+import type { LoaderArgs } from '@remix-run/server-runtime';
 import { FormData, Request } from '@remix-run/node';
 import { z } from 'zod';
 import { zx } from './';

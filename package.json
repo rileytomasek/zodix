@@ -26,6 +26,7 @@
   "devDependencies": {
     "@remix-run/eslint-config": "^1.7.2",
     "@remix-run/node": "^1.7.2",
+    "@remix-run/server-runtime": "^1.7.2",
     "esbuild": "^0.15.10",
     "eslint": "^8.25.0",
     "eslint-config-prettier": "^8.5.0",
