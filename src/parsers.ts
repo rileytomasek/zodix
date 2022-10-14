@@ -1,5 +1,4 @@
-import type { LoaderArgs } from '@remix-run/node';
-import { FormData } from '@remix-run/node';
+import type { LoaderArgs } from '@remix-run/server-runtime';
 import type { ZodRawShape, ZodTypeAny } from 'zod';
 import { z, ZodType } from 'zod';
 
@@ -44,10 +43,9 @@ export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
   schema: T,
   options?: Options
 ): ParsedData<T> {
-  const searchParams =
-    request instanceof URLSearchParams
-      ? request
-      : getSearchParamsFromRequest(request);
+  const searchParams = isURLSearchParams(request)
+    ? request
+    : getSearchParamsFromRequest(request);
   const params = parseSearchParams(searchParams, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.parse(params);
@@ -55,25 +53,16 @@ export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
 
 /**
  * Parse and validate FormData from a Request
- * @param request - A Request
+ * @param request - A Request or FormData
  * @param schema - A Zod object shape or object schema to validate.
  */
-export function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
-  formData: FormData,
-  schema: T,
-  options?: Options
-): Promise<ParsedData<T>>;
-export function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
-  request: Request,
-  schema: T,
-  options?: Options
-): Promise<ParsedData<T>>;
 export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
   request: Request | FormData,
   schema: T,
   options?: Options
 ): Promise<ParsedData<T>> {
-  const data = await parseFormData(request, options?.parser);
+  const formData = isFormData(request) ? request : await request.formData();
+  const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.parse(data);
 }
@@ -92,13 +81,11 @@ type SearchParamsParser = (searchParams: URLSearchParams) => ParsedSearchParams;
  * Get the form data from a request as an object.
  */
 async function parseFormData(
-  request: Request | FormData,
+  formData: FormData,
   customParser?: SearchParamsParser
 ) {
-  const formData =
-    request instanceof FormData ? request : await request.clone().formData();
-  // @ts-ignore: the types are wrong here. see: https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams/URLSearchParams
-  return parseSearchParams(new URLSearchParams(formData), customParser);
+  // Context on `as any` usage: https://github.com/microsoft/TypeScript/issues/30584
+  return parseSearchParams(new URLSearchParams(formData as any), customParser);
 }
 
 /**
@@ -137,4 +124,24 @@ const parseSearchParamsDefault: SearchParamsParser = (searchParams) => {
 function getSearchParamsFromRequest(request: Request): URLSearchParams {
   const url = new URL(request.url);
   return url.searchParams;
+}
+
+/**
+ * Check if value is an instance of FormData.
+ * This is a workaround for `instanceof` to support multiple platforms.
+ */
+function isFormData(value: unknown): value is FormData {
+  return getObjectTypeName(value) === 'FormData';
+}
+
+/**
+ * Check if value is an instance of URLSearchParams.
+ * This is a workaround for `instanceof` to support multiple platforms.
+ */
+function isURLSearchParams(value: unknown): value is FormData {
+  return getObjectTypeName(value) === 'URLSearchParams';
+}
+
+function getObjectTypeName(value: unknown): string {
+  return toString.call(value).slice(8, -1);
 }
