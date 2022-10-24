@@ -1,5 +1,7 @@
 # Zodix
 
+[![Build Status](https://github.com/rileytomasek/zodix/actions/workflows/main.yml/badge.svg)](https://github.com/rileytomasek/zodix/actions/workflows/main.yml) [![npm version](https://img.shields.io/npm/v/zodix.svg?color=0c0)](https://www.npmjs.com/package/zodix)
+
 Zodix is a collection of [Zod](https://github.com/colinhacks/zod) utilities for [Remix](https://github.com/remix-run/remix) loaders and actions. It abstracts the complexity of parsing and validating `FormData` and `URLSearchParams` so your loaders/actions stay clean and are strongly typed.
 
 Remix loaders often look like:
