@@ -30,13 +30,17 @@ export async function loader({ params, request }: LoaderArgs) {
 };
 ```
 
+Check the [example app](/examples/app/routes) for complete examples of common patterns.
+
 ## Highlights
 
 - Significantly reduce Remix action/loader bloat
-- Avoid the oddities of FormData and URLSearchParams.
-- Tiny with no external dependencies. [Less than 1kb gzipped](https://bundlephobia.com/package/zodix).
-- Use existing Zod schemas, or write them on the fly.
-- Custom Zod schemas for stringified numbers, booleans, and checkboxes.
+- Avoid the oddities of FormData and URLSearchParams
+- Tiny with no external dependencies ([Less than 1kb gzipped](https://bundlephobia.com/package/zodix))
+- Use existing Zod schemas, or write them on the fly
+- Custom Zod schemas for stringified numbers, booleans, and checkboxes
+- Throw errors meant for Remix CatchBoundary by default
+- Supports non-throwing parsing for custom validation/errors
 - Full [unit test coverage](/src)
 
 ## Install
@@ -131,6 +135,59 @@ export async function loader({ request }: LoaderArgs) {
   });
 };
 ```
+
+### zx.parseParamsSafe() / zx.parseFormSafe() / zx.parseQuerySafe()
+
+These work the same as the non-safe versions, but don't throw when validation fails. They use [`z.parseSafe()`](https://github.com/colinhacks/zod#safeparse) and always return an object with the parsed data or an error.
+
+```ts
+export async function action(args: ActionArgs) {
+  const results = await zx.parseFormSafe(args.request, {
+    email: z.string().email({ message: "Invalid email" }),
+    password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  });
+  return json({
+    success: results.success,
+    error: results.error,
+  });
+}
+```
+
+Check the [login page example](/examples/app/routes/login.tsx) for a full example.
+
+## Error Handling
+
+### `parseParams()`, `parseForm()`, and `parseQuery()`
+
+These functions throw a 400 Response when the parsing fails. This works nicely with [Remix catch boundaries](https://remix.run/docs/en/v1/guides/not-found#nested-catch-boundaries) and should be used for parsing things that should rarely fail and don't require custom error handling. You can pass a custom error message or status code.
+
+```ts
+export async function loader({ params }: LoaderArgs) {
+  const { postId } = zx.parseParams(
+    params,
+    { postId: zx.NumAsString },
+    { message: "Invalid postId parameter", status: 400 }
+  );
+  const post = await getPost(postId);
+  return { post };
+}
+export function CatchBoundary() {
+  const caught = useCatch();
+  return <h1>Caught error: {caught.statusText}</h1>;
+}
+```
+
+Check the [post page example](/examples/app/routes/posts/$postId.tsx) for a full example.
+
+### `parseParamsSafe()`, `parseFormSafe()`, and `parseQuerySafe()`
+
+These functions are great for form validation because they don't throw when parsing fails. They always return an object with this shape:
+
+```ts
+{ success: boolean; error?: ZodError; data?: <parsed data>; }
+```
+
+You can then handle errors in the action and access them in the component using `useActionData()`. Check the [login page example](/examples/app/routes/login.tsx) for a full example.
 
 ## Helper Zod Schemas
 
