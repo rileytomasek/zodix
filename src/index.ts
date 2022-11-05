@@ -1,4 +1,11 @@
-import { parseParams, parseQuery, parseForm } from './parsers';
+import {
+  parseParams,
+  parseParamsSafe,
+  parseQuery,
+  parseQuerySafe,
+  parseForm,
+  parseFormSafe,
+} from './parsers';
 import {
   BoolAsString,
   CheckboxAsString,
@@ -8,8 +15,11 @@ import {
 
 export {
   parseParams,
+  parseParamsSafe,
   parseQuery,
+  parseQuerySafe,
   parseForm,
+  parseFormSafe,
   BoolAsString,
   CheckboxAsString,
   IntAsString,
@@ -18,8 +28,11 @@ export {
 
 export const zx = {
   parseParams,
+  parseParamsSafe,
   parseQuery,
+  parseQuerySafe,
   parseForm,
+  parseFormSafe,
   BoolAsString,
   CheckboxAsString,
   IntAsString,

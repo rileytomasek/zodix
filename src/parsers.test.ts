@@ -33,6 +33,41 @@ describe('parseParams', () => {
   });
 });
 
+describe('parseParamsSafe', () => {
+  type Result = { id: string; age: number };
+  const params: Params = { id: 'id1', age: '10' };
+  const paramsResult = { id: 'id1', age: 10 };
+  const schema = z.object({ id: z.string(), age: zx.IntAsString });
+
+  test('parses params using an object', () => {
+    const result = zx.parseParamsSafe(params, {
+      id: z.string(),
+      age: zx.IntAsString,
+    });
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(paramsResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses params using a schema', () => {
+    const result = zx.parseParamsSafe(params, schema);
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(paramsResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('returns an error for invalid params', () => {
+    const badParams = { ...params, age: 'not a number' };
+    const result = zx.parseParamsSafe(badParams, schema);
+    expect(result.success).toBe(false);
+    if (result.success !== false) throw new Error('Parsing should have failed');
+    expect(result.error.issues.length).toBe(1);
+    expect(result.error.issues[0].path[0]).toBe('age');
+  });
+});
+
 describe('parseQuery', () => {
   type Result = { id: string; age: number; friends?: string[] };
   const queryResult = { id: 'id1', age: 10 };
@@ -122,6 +157,89 @@ describe('parseQuery', () => {
   });
 });
 
+describe('parseQuerySafe', () => {
+  type Result = { id: string; age: number; friends?: string[] };
+  const queryResult = { id: 'id1', age: 10 };
+  const schema = z.object({
+    id: z.string(),
+    age: zx.IntAsString,
+    friends: z.array(z.string()).optional(),
+  });
+
+  test('parses URLSearchParams using an object', () => {
+    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const result = zx.parseQuerySafe(search, {
+      id: z.string(),
+      age: zx.IntAsString,
+      friends: z.array(z.string()).optional(),
+    });
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(queryResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses URLSearchParams using a schema', () => {
+    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const result = zx.parseQuerySafe(search, schema);
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(queryResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses arrays from URLSearchParams', () => {
+    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    search.append('friends', 'friend1');
+    search.append('friends', 'friend2');
+    const result = zx.parseQuerySafe(search, {
+      id: z.string(),
+      age: zx.IntAsString,
+      friends: z.array(z.string()).optional(),
+    });
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual({
+      ...queryResult,
+      friends: ['friend1', 'friend2'],
+    });
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses query string from a Request using an object', () => {
+    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const request = new Request(`http://example.com?${search.toString()}`);
+    const result = zx.parseQuerySafe(request, {
+      id: z.string(),
+      age: zx.IntAsString,
+      friends: z.array(z.string()).optional(),
+    });
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(queryResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses query string from a Request using a schema', () => {
+    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const request = new Request(`http://example.com?${search.toString()}`);
+    const result = zx.parseQuerySafe(request, schema);
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(queryResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('returns an error for invalid query params', () => {
+    const badRequest = new Request(`http://example.com?id=id1&age=notanumber`);
+    const result = zx.parseQuerySafe(badRequest, schema);
+    expect(result.success).toBe(false);
+    if (result.success !== false) throw new Error('Parsing should have failed');
+    expect(result.error.issues.length).toBe(1);
+    expect(result.error.issues[0].path[0]).toBe('age');
+  });
+});
+
 const createFormRequest = (age: string = '10') => {
   const form = new FormData();
   form.append('id', 'id1');
@@ -198,6 +316,63 @@ describe('parseForm', () => {
   test('throws for invalid FormData', () => {
     const badRequest = createFormRequest('notanumber');
     expect(() => zx.parseQuery(badRequest, schema)).toThrow();
+  });
+});
+
+describe('parseFormSafe', () => {
+  type Result = {
+    id: string;
+    age: number;
+    consent: boolean;
+    friends?: string[];
+  };
+  const formResult = { id: 'id1', age: 10, consent: true };
+  const schema = z.object({
+    id: z.string(),
+    age: zx.IntAsString,
+    consent: zx.CheckboxAsString,
+    friends: z.array(z.string()).optional(),
+  });
+
+  test('parses FormData from Request using an object', async () => {
+    const request = createFormRequest();
+    const result = await zx.parseFormSafe(request, {
+      id: z.string(),
+      age: zx.IntAsString,
+      consent: zx.CheckboxAsString,
+      friends: z.array(z.string()).optional(),
+    });
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(formResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses FormData from Request using a schema', async () => {
+    const request = createFormRequest();
+    const result = await zx.parseFormSafe(request, schema);
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(formResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('parses FormData from FormData using a schema', async () => {
+    const formData = await createFormRequest().formData();
+    const result = await zx.parseFormSafe(formData, schema);
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual(formResult);
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
+
+  test('returns an error for invalid FormData', async () => {
+    const badRequest = createFormRequest('notanumber');
+    const result = await zx.parseFormSafe(badRequest, schema);
+    expect(result.success).toBe(false);
+    if (result.success !== false) throw new Error('Parsing should have failed');
+    expect(result.error.issues.length).toBe(1);
+    expect(result.error.issues[0].path[0]).toBe('age');
   });
 });
 
