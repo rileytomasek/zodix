@@ -29,7 +29,7 @@ describe('parseParams', () => {
 
   test('throws for invalid params', () => {
     const badParams = { ...params, age: 'not a number' };
-    expect(() => zx.parseParams(badParams, schema)).toThrowError();
+    expect(() => zx.parseParams(badParams, schema)).toThrow();
   });
 });
 
@@ -98,7 +98,7 @@ describe('parseQuery', () => {
 
   test('throws for invalid query params', () => {
     const badRequest = new Request(`http://example.com?id=id1&age=notanumber`);
-    expect(() => zx.parseQuery(badRequest, schema)).toThrowError();
+    expect(() => zx.parseQuery(badRequest, schema)).toThrow();
   });
 
   test('supports custom URLSearchParam parsers', () => {
@@ -197,7 +197,7 @@ describe('parseForm', () => {
 
   test('throws for invalid FormData', () => {
     const badRequest = createFormRequest('notanumber');
-    expect(() => zx.parseQuery(badRequest, schema)).toThrowError();
+    expect(() => zx.parseQuery(badRequest, schema)).toThrow();
   });
 });
 

@@ -1,13 +1,16 @@
 import type { LoaderArgs } from '@remix-run/server-runtime';
 import type { ZodRawShape, ZodTypeAny } from 'zod';
 import { z, ZodType } from 'zod';
+import { createErrorResponse } from './errors';
 
 type Params = LoaderArgs['params'];
 
 type Options = {
-  /**
-   * Custom URLSearchParams parsing function.
-   */
+  /** Custom error message for when the validation fails. */
+  message?: string;
+  /** Status code for thrown request when validation fails. */
+  status?: number;
+  /** Custom URLSearchParams parsing function. */
   parser?: SearchParamsParser;
 };
 
@@ -24,11 +27,20 @@ type ParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
  * Parse and validate Params from LoaderArgs or ActionArgs.
  * @param params - A Remix Params object.
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
 export function parseParams<T extends ZodRawShape | ZodTypeAny>(
   params: Params,
-  schema: T
+  schema: T,
+  options?: Options
 ): ParsedData<T> {
+  try {
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(params);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
+}
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.parse(params);
 }
@@ -37,12 +49,24 @@ export function parseParams<T extends ZodRawShape | ZodTypeAny>(
  * Parse and validate URLSearchParams or a Request
  * @param request - A Request or URLSearchParams
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
 export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
   request: Request | URLSearchParams,
   schema: T,
   options?: Options
 ): ParsedData<T> {
+  try {
+    const searchParams = isURLSearchParams(request)
+      ? request
+      : getSearchParamsFromRequest(request);
+    const params = parseSearchParams(searchParams, options?.parser);
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(params);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
+}
   const searchParams = isURLSearchParams(request)
     ? request
     : getSearchParamsFromRequest(request);
@@ -55,12 +79,22 @@ export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
  * Parse and validate FormData from a Request
  * @param request - A Request or FormData
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
 export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
   request: Request | FormData,
   schema: T,
   options?: Options
 ): Promise<ParsedData<T>> {
+  try {
+    const formData = isFormData(request) ? request : await request.formData();
+    const data = await parseFormData(formData, options?.parser);
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(data);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
+}
   const formData = isFormData(request) ? request : await request.formData();
   const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
