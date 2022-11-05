@@ -1,7 +1,13 @@
-import type { LoaderArgs } from '@remix-run/server-runtime';
-import type { SafeParseReturnType, ZodRawShape, ZodTypeAny } from 'zod';
 import { z, ZodType } from 'zod';
 import { createErrorResponse } from './errors';
+import type { LoaderArgs } from '@remix-run/server-runtime';
+import type {
+  output,
+  SafeParseReturnType,
+  ZodObject,
+  ZodRawShape,
+  ZodTypeAny,
+} from 'zod';
 
 type Params = LoaderArgs['params'];
 
@@ -18,19 +24,18 @@ type Options = {
  * Generic return type for parseX functions.
  */
 type ParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
-  ? z.output<T>
+  ? output<T>
   : T extends ZodRawShape
-  ? z.output<z.ZodObject<T>>
+  ? output<ZodObject<T>>
   : never;
 
 /**
  * Generic return type for parseXSafe functions.
  */
-// TODO
 type SafeParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
-  ? z.SafeParseReturnType<T, ParsedData<T>>
+  ? SafeParseReturnType<T, ParsedData<T>>
   : T extends ZodRawShape
-  ? z.SafeParseReturnType<z.ZodObject<T>, ParsedData<T>>
+  ? SafeParseReturnType<ZodObject<T>, ParsedData<T>>
   : never;
 
 /**
@@ -72,7 +77,7 @@ export function parseParamsSafe<T extends ZodRawShape | ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @throws {Response} - Throws an error Response if validation fails.
  */
-export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
+export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
   request: Request | URLSearchParams,
   schema: T,
   options?: Options
@@ -95,7 +100,7 @@ export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
  */
-export function parseQuerySafe<T extends ZodRawShape | z.ZodTypeAny>(
+export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
   request: Request | URLSearchParams,
   schema: T,
   options?: Options
@@ -114,7 +119,7 @@ export function parseQuerySafe<T extends ZodRawShape | z.ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @throws {Response} - Throws an error Response if validation fails.
  */
-export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
+export async function parseForm<T extends ZodRawShape | ZodTypeAny>(
   request: Request | FormData,
   schema: T,
   options?: Options
@@ -135,7 +140,7 @@ export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
  */
-export async function parseFormSafe<T extends ZodRawShape | z.ZodTypeAny>(
+export async function parseFormSafe<T extends ZodRawShape | ZodTypeAny>(
   request: Request | FormData,
   schema: T,
   options?: Options
