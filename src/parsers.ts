@@ -1,70 +1,154 @@
-import type { LoaderArgs } from '@remix-run/server-runtime';
-import type { ZodRawShape, ZodTypeAny } from 'zod';
 import { z, ZodType } from 'zod';
+import { createErrorResponse } from './errors';
+import type { LoaderArgs } from '@remix-run/server-runtime';
+import type {
+  output,
+  SafeParseReturnType,
+  ZodObject,
+  ZodRawShape,
+  ZodTypeAny,
+} from 'zod';
 
 type Params = LoaderArgs['params'];
 
 type Options = {
-  /**
-   * Custom URLSearchParams parsing function.
-   */
+  /** Custom error message for when the validation fails. */
+  message?: string;
+  /** Status code for thrown request when validation fails. */
+  status?: number;
+  /** Custom URLSearchParams parsing function. */
   parser?: SearchParamsParser;
 };
 
 /**
- * Generic return type for parsing function.
+ * Generic return type for parseX functions.
  */
 type ParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
-  ? z.output<T>
+  ? output<T>
   : T extends ZodRawShape
-  ? z.output<z.ZodObject<T>>
+  ? output<ZodObject<T>>
   : never;
 
 /**
- * Parse and validate Params from LoaderArgs or ActionArgs.
+ * Generic return type for parseXSafe functions.
+ */
+type SafeParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
+  ? SafeParseReturnType<T, ParsedData<T>>
+  : T extends ZodRawShape
+  ? SafeParseReturnType<ZodObject<T>, ParsedData<T>>
+  : never;
+
+/**
+ * Parse and validate Params from LoaderArgs or ActionArgs. Throws an error if validation fails.
  * @param params - A Remix Params object.
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
 export function parseParams<T extends ZodRawShape | ZodTypeAny>(
   params: Params,
-  schema: T
+  schema: T,
+  options?: Options
 ): ParsedData<T> {
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
-  return finalSchema.parse(params);
+  try {
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(params);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
 }
 
 /**
- * Parse and validate URLSearchParams or a Request
+ * Parse and validate Params from LoaderArgs or ActionArgs. Doesn't throw if validation fails.
+ * @param params - A Remix Params object.
+ * @param schema - A Zod object shape or object schema to validate.
+ * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
+ */
+export function parseParamsSafe<T extends ZodRawShape | ZodTypeAny>(
+  params: Params,
+  schema: T
+): SafeParsedData<T> {
+  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  return finalSchema.safeParse(params) as SafeParsedData<T>;
+}
+
+/**
+ * Parse and validate URLSearchParams or a Request. Throws an error if validation fails.
  * @param request - A Request or URLSearchParams
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
-export function parseQuery<T extends ZodRawShape | z.ZodTypeAny>(
+export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
   request: Request | URLSearchParams,
   schema: T,
   options?: Options
 ): ParsedData<T> {
+  try {
+    const searchParams = isURLSearchParams(request)
+      ? request
+      : getSearchParamsFromRequest(request);
+    const params = parseSearchParams(searchParams, options?.parser);
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(params);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
+}
+
+/**
+ * Parse and validate URLSearchParams or a Request. Doesn't throw if validation fails.
+ * @param request - A Request or URLSearchParams
+ * @param schema - A Zod object shape or object schema to validate.
+ * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
+ */
+export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
+  request: Request | URLSearchParams,
+  schema: T,
+  options?: Options
+): SafeParsedData<T> {
   const searchParams = isURLSearchParams(request)
     ? request
     : getSearchParamsFromRequest(request);
   const params = parseSearchParams(searchParams, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
-  return finalSchema.parse(params);
+  return finalSchema.safeParse(params) as SafeParsedData<T>;
 }
 
 /**
- * Parse and validate FormData from a Request
+ * Parse and validate FormData from a Request. Throws an error if validation fails.
  * @param request - A Request or FormData
  * @param schema - A Zod object shape or object schema to validate.
+ * @throws {Response} - Throws an error Response if validation fails.
  */
-export async function parseForm<T extends ZodRawShape | z.ZodTypeAny>(
+export async function parseForm<T extends ZodRawShape | ZodTypeAny>(
   request: Request | FormData,
   schema: T,
   options?: Options
 ): Promise<ParsedData<T>> {
+  try {
+    const formData = isFormData(request) ? request : await request.formData();
+    const data = await parseFormData(formData, options?.parser);
+    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    return finalSchema.parse(data);
+  } catch (error) {
+    throw createErrorResponse(options);
+  }
+}
+
+/**
+ * Parse and validate FormData from a Request. Doesn't throw if validation fails.
+ * @param request - A Request or FormData
+ * @param schema - A Zod object shape or object schema to validate.
+ * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
+ */
+export async function parseFormSafe<T extends ZodRawShape | ZodTypeAny>(
+  request: Request | FormData,
+  schema: T,
+  options?: Options
+): Promise<SafeParsedData<T>> {
   const formData = isFormData(request) ? request : await request.formData();
   const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
-  return finalSchema.parse(data);
+  return finalSchema.safeParse(data) as SafeParsedData<T>;
 }
 
 /**
