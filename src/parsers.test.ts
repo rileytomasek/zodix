@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { LoaderArgs } from '@remix-run/server-runtime';
-import { FormData, Request } from '@remix-run/node';
+import { FormData, NodeOnDiskFile, Request } from '@remix-run/node';
 import { z } from 'zod';
 import { zx } from './';
 
@@ -147,7 +147,7 @@ describe('parseQuery', () => {
         age: zx.IntAsString,
         friends: z.array(z.string()).optional(),
       },
-      { parser: customParser }
+      { parser: customArrayParser }
     );
     expect(result).toStrictEqual({
       ...queryResult,
@@ -254,6 +254,7 @@ describe('parseForm', () => {
     age: number;
     consent: boolean;
     friends?: string[];
+    image?: NodeOnDiskFile;
   };
   const formResult = { id: 'id1', age: 10, consent: true };
   const schema = z.object({
@@ -261,6 +262,7 @@ describe('parseForm', () => {
     age: zx.IntAsString,
     consent: zx.CheckboxAsString,
     friends: z.array(z.string()).optional(),
+    image: z.instanceof(NodeOnDiskFile).optional(),
   });
 
   test('parses FormData from Request using an object', async () => {
@@ -270,6 +272,7 @@ describe('parseForm', () => {
       age: zx.IntAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
+      image: z.instanceof(NodeOnDiskFile).optional(),
     });
     expect(result).toStrictEqual(formResult);
     type verify = Expect<Equal<typeof result, Result>>;
@@ -305,10 +308,29 @@ describe('parseForm', () => {
       age: zx.IntAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
+      image: z.instanceof(NodeOnDiskFile).optional(),
     });
     expect(result).toStrictEqual({
       ...formResult,
       friends: ['friend1', 'friend2'],
+    });
+    type verify = Expect<Equal<typeof result, Result>>;
+  });
+
+  test('parses objects keys of FormData from FormData', async () => {
+    const request = createFormRequest();
+    const form = await request.formData();
+    const image = new NodeOnDiskFile('public/image.jpeg', 'image/jpeg');
+    form.append('image', image);
+    const parser = getCustomFileParser('image');
+    const result = await zx.parseForm<typeof schema, typeof parser>(
+      form,
+      schema,
+      { parser }
+    );
+    expect(result).toStrictEqual({
+      ...formResult,
+      image,
     });
     type verify = Expect<Equal<typeof result, Result>>;
   });
@@ -325,6 +347,7 @@ describe('parseFormSafe', () => {
     age: number;
     consent: boolean;
     friends?: string[];
+    image?: NodeOnDiskFile;
   };
   const formResult = { id: 'id1', age: 10, consent: true };
   const schema = z.object({
@@ -332,6 +355,7 @@ describe('parseFormSafe', () => {
     age: zx.IntAsString,
     consent: zx.CheckboxAsString,
     friends: z.array(z.string()).optional(),
+    image: z.instanceof(NodeOnDiskFile).optional(),
   });
 
   test('parses FormData from Request using an object', async () => {
@@ -341,6 +365,7 @@ describe('parseFormSafe', () => {
       age: zx.IntAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
+      image: z.instanceof(NodeOnDiskFile).optional(),
     });
     expect(result.success).toBe(true);
     if (result.success !== true) throw new Error('Parsing failed');
@@ -374,10 +399,30 @@ describe('parseFormSafe', () => {
     expect(result.error.issues.length).toBe(1);
     expect(result.error.issues[0].path[0]).toBe('age');
   });
+
+  test('parses objects keys of FormData from FormData', async () => {
+    const request = createFormRequest();
+    const form = await request.formData();
+    const image = new NodeOnDiskFile('public/image.jpeg', 'image/jpeg');
+    form.append('image', image);
+    const parser = getCustomFileParser('image');
+    const result = await zx.parseFormSafe<typeof schema, typeof parser>(
+      form,
+      schema,
+      { parser }
+    );
+    expect(result.success).toBe(true);
+    if (result.success !== true) throw new Error('Parsing failed');
+    expect(result.data).toStrictEqual({
+      ...formResult,
+      image,
+    });
+    type verify = Expect<Equal<typeof result.data, Result>>;
+  });
 });
 
-// Custom URLSearchParams parser that cleanrs arr[] keys
-function customParser(searchParams: URLSearchParams) {
+// Custom URLSearchParams parser that cleans arr[] keys
+function customArrayParser(searchParams: URLSearchParams) {
   const values: { [key: string]: string | string[] } = {};
   for (const [key, value] of searchParams) {
     // Remove trailing [] from array keys
@@ -394,6 +439,29 @@ function customParser(searchParams: URLSearchParams) {
   return values;
 }
 
+// Custom URLSearchParams parser that casts a set of key to NodeOnDiskFile
+type CustomParsedSearchParams = {
+  [key: string]: string | string[] | NodeOnDiskFile;
+};
+function getCustomFileParser(...fileKeys: string[]) {
+  return function (searchParams: URLSearchParams) {
+    const values: CustomParsedSearchParams = {};
+    for (const [key, value] of searchParams) {
+      const currentVal = values[key];
+      if (fileKeys.includes(key)) {
+        const obj = JSON.parse(value);
+        values[key] = new NodeOnDiskFile(obj.filepath, obj.type, obj.slicer);
+      } else if (currentVal && Array.isArray(currentVal)) {
+        currentVal.push(value);
+      } else if (currentVal && typeof currentVal === 'string') {
+        values[key] = [currentVal, value];
+      } else {
+        values[key] = value;
+      }
+    }
+    return values;
+  };
+}
 // Ensure parsed results are typed correctly. Thanks Matt!
 // https://github.com/total-typescript/zod-tutorial/blob/main/src/helpers/type-utils.ts
 type Expect<T extends true> = T;
