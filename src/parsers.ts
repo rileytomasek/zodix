@@ -11,13 +11,13 @@ import type {
 
 type Params = LoaderArgs['params'];
 
-type Options = {
+type Options<Parser = SearchParamsParser> = {
   /** Custom error message for when the validation fails. */
   message?: string;
   /** Status code for thrown request when validation fails. */
   status?: number;
   /** Custom URLSearchParams parsing function. */
-  parser?: SearchParamsParser;
+  parser?: Parser;
 };
 
 /**
@@ -119,10 +119,13 @@ export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @throws {Response} - Throws an error Response if validation fails.
  */
-export async function parseForm<T extends ZodRawShape | ZodTypeAny>(
+export async function parseForm<
+  T extends ZodRawShape | ZodTypeAny,
+  Parser extends SearchParamsParser<any>
+>(
   request: Request | FormData,
   schema: T,
-  options?: Options
+  options?: Options<Parser>
 ): Promise<ParsedData<T>> {
   try {
     const formData = isFormData(request) ? request : await request.formData();
@@ -140,10 +143,13 @@ export async function parseForm<T extends ZodRawShape | ZodTypeAny>(
  * @param schema - A Zod object shape or object schema to validate.
  * @returns {SafeParseReturnType} - An object with the parsed data or a ZodError.
  */
-export async function parseFormSafe<T extends ZodRawShape | ZodTypeAny>(
+export async function parseFormSafe<
+  T extends ZodRawShape | ZodTypeAny,
+  Parser extends SearchParamsParser<any>
+>(
   request: Request | FormData,
   schema: T,
-  options?: Options
+  options?: Options<Parser>
 ): Promise<SafeParsedData<T>> {
   const formData = isFormData(request) ? request : await request.formData();
   const data = await parseFormData(formData, options?.parser);
@@ -159,7 +165,16 @@ type ParsedSearchParams = Record<string, string | string[]>;
 /**
  * Function signature to allow for custom URLSearchParams parsing.
  */
-type SearchParamsParser = (searchParams: URLSearchParams) => ParsedSearchParams;
+type SearchParamsParser<T = ParsedSearchParams> = (
+  searchParams: URLSearchParams
+) => T;
+
+/**
+ * Check if an object entry value is an instance of Object
+ */
+function isObjectEntry([, value]: [string, FormDataEntryValue]) {
+  return value instanceof Object;
+}
 
 /**
  * Get the form data from a request as an object.
@@ -168,6 +183,10 @@ async function parseFormData(
   formData: FormData,
   customParser?: SearchParamsParser
 ) {
+  const objectEntries = [...formData.entries()].filter(isObjectEntry);
+  objectEntries.forEach(([key, value]) => {
+    formData.set(key, JSON.stringify(value));
+  });
   // Context on `as any` usage: https://github.com/microsoft/TypeScript/issues/30584
   return parseSearchParams(new URLSearchParams(formData as any), customParser);
 }
