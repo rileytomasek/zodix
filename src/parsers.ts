@@ -85,7 +85,7 @@ export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
   try {
     const searchParams = isURLSearchParams(request)
       ? request
-      : getSearchParamsFromRequest(request);
+      : getSearchParamsFromRequest(request.clone());
     const params = parseSearchParams(searchParams, options?.parser);
     const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
     return finalSchema.parse(params);
@@ -107,7 +107,7 @@ export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
 ): SafeParsedData<T> {
   const searchParams = isURLSearchParams(request)
     ? request
-    : getSearchParamsFromRequest(request);
+    : getSearchParamsFromRequest(request.clone());
   const params = parseSearchParams(searchParams, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
@@ -128,7 +128,9 @@ export async function parseForm<
   options?: Options<Parser>
 ): Promise<ParsedData<T>> {
   try {
-    const formData = isFormData(request) ? request : await request.formData();
+    const formData = isFormData(request)
+      ? request
+      : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
     const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
     return finalSchema.parse(data);
@@ -151,7 +153,9 @@ export async function parseFormSafe<
   schema: T,
   options?: Options<Parser>
 ): Promise<SafeParsedData<T>> {
-  const formData = isFormData(request) ? request : await request.formData();
+  const formData = isFormData(request)
+    ? request
+    : await request.clone().formData();
   const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.safeParse(data) as SafeParsedData<T>;
