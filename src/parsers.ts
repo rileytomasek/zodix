@@ -33,7 +33,7 @@ type ParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
  * Generic return type for parseXSafe functions.
  */
 type SafeParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
-  ? SafeParseReturnType<T, ParsedData<T>>
+  ? SafeParseReturnType<z.infer<T>, ParsedData<T>>
   : T extends ZodRawShape
   ? SafeParseReturnType<ZodObject<T>, ParsedData<T>>
   : never;
