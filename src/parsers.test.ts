@@ -419,6 +419,26 @@ describe('parseFormSafe', () => {
     });
     type verify = Expect<Equal<typeof result.data, Result>>;
   });
+
+  test('infer type of ZodEffect schemas', async () => {
+    const schema = z
+      .object({
+        password: z.string().min(8),
+        confirmPassword: z.string().min(8),
+      })
+      .refine(({ password, confirmPassword }) => password === confirmPassword);
+    const formData = new FormData();
+    formData.set('password', 'foo');
+    formData.set('confirmPassword', 'bar');
+    const data = {
+      password: 'foo',
+      confirmPassword: 'bar ',
+    };
+    const zodixResult = await zx.parseFormSafe(formData, schema);
+    const zodResult = await schema.safeParseAsync(data);
+    expect(zodixResult).toStrictEqual(zodResult);
+    type verify = Expect<Equal<typeof zodixResult, typeof zodResult>>;
+  });
 });
 
 // Custom URLSearchParams parser that cleans arr[] keys
