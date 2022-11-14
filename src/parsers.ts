@@ -1,5 +1,3 @@
-import { z, ZodType } from 'zod';
-import { createErrorResponse } from './errors';
 import type { LoaderArgs } from '@remix-run/server-runtime';
 import type {
   output,
@@ -8,6 +6,8 @@ import type {
   ZodRawShape,
   ZodTypeAny,
 } from 'zod';
+import { z, ZodType } from 'zod';
+import { createErrorResponse } from './errors';
 
 type Params = LoaderArgs['params'];
 
@@ -85,7 +85,7 @@ export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
   try {
     const searchParams = isURLSearchParams(request)
       ? request
-      : getSearchParamsFromRequest(request.clone());
+      : getSearchParamsFromRequest(request);
     const params = parseSearchParams(searchParams, options?.parser);
     const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
     return finalSchema.parse(params);
@@ -107,7 +107,7 @@ export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
 ): SafeParsedData<T> {
   const searchParams = isURLSearchParams(request)
     ? request
-    : getSearchParamsFromRequest(request.clone());
+    : getSearchParamsFromRequest(request);
   const params = parseSearchParams(searchParams, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
