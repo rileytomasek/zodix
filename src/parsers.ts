@@ -128,7 +128,9 @@ export async function parseForm<
   options?: Options<Parser>
 ): Promise<ParsedData<T>> {
   try {
-    const formData = isFormData(request) ? request : await request.formData();
+    const formData = isFormData(request)
+      ? request
+      : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
     const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
     return finalSchema.parse(data);
@@ -151,7 +153,9 @@ export async function parseFormSafe<
   schema: T,
   options?: Options<Parser>
 ): Promise<SafeParsedData<T>> {
-  const formData = isFormData(request) ? request : await request.formData();
+  const formData = isFormData(request)
+    ? request
+    : await request.clone().formData();
   const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
   return finalSchema.safeParse(data) as SafeParsedData<T>;
