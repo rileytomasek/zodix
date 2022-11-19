@@ -41,25 +41,25 @@ Check the [example app](/examples/app/routes) for complete examples of common pa
 - Custom Zod schemas for stringified numbers, booleans, and checkboxes
 - Throw errors meant for Remix CatchBoundary by default
 - Supports non-throwing parsing for custom validation/errors
+- Works with all Remix runtimes (Node, Deno, Vercel, Cloudflare, etc)
 - Full [unit test coverage](/src)
 
-## Install
+## Setup
+
+Install with npm, yarn, pnpm, etc.
 
 ```sh
 npm install zodix zod
 ```
 
-## Usage
-
-### Import
+Import the `zx` object, or specific functions:
 
 ```ts
 import { zx } from 'zodix';
-
-// Or
-
-import { parseParams, NumAsString } from 'zodix';
+// import { parseParams, NumAsString } from 'zodix';
 ```
+
+## Usage
 
 ### zx.parseParams(params: Params, schema: Schema)
 
