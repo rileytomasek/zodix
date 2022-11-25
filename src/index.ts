@@ -11,6 +11,7 @@ import {
   CheckboxAsString,
   IntAsString,
   NumAsString,
+  DateAsString,
 } from './schemas';
 
 export {
@@ -24,6 +25,7 @@ export {
   CheckboxAsString,
   IntAsString,
   NumAsString,
+  DateAsString,
 };
 
 export const zx = {
@@ -37,4 +39,5 @@ export const zx = {
   CheckboxAsString,
   IntAsString,
   NumAsString,
+  DateAsString,
 };
