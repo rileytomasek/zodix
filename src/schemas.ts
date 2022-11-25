@@ -52,3 +52,17 @@ export const NumAsString = z
   .string()
   .regex(/^-?\d*\.?\d+$/, 'Must be a number string')
   .transform(Number);
+
+/**
+* Zod schema to parse strings that are dates or datetimes.
+* Use to parse <input type="date" /> or <input type="datetime-local" /> values.
+* @example
+* ```ts
+* DateAsString.parse('2022-11-25') -> 2022-11-25T00:00:00.000Z
+* ```
+*/
+export const DateAsString = z
+  .preprocess(
+    (arg) => (typeof arg == "string" || arg instanceof Date) && new Date(arg),
+    z.date()
+  );
