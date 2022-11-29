@@ -8,14 +8,15 @@ type Params = LoaderArgs['params'];
 
 describe('parseParams', () => {
   type Result = { id: string; age: number };
-  const params: Params = { id: 'id1', age: '10' };
-  const paramsResult = { id: 'id1', age: 10 };
-  const schema = z.object({ id: z.string(), age: zx.IntAsString });
+  const params: Params = { id: 'id1', age: '10', date: '2022-11-29' };
+  const paramsResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z };
+  const schema = z.object({ id: z.string(), age: zx.IntAsString, date: zx.DateAsString });
 
   test('parses params using an object', () => {
     const result = zx.parseParams(params, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
     });
     expect(result).toStrictEqual(paramsResult);
     type verify = Expect<Equal<typeof result, Result>>;
@@ -28,21 +29,22 @@ describe('parseParams', () => {
   });
 
   test('throws for invalid params', () => {
-    const badParams = { ...params, age: 'not a number' };
+    const badParams = { ...params, age: 'not a number', date: 'not a date' };
     expect(() => zx.parseParams(badParams, schema)).toThrow();
   });
 });
 
 describe('parseParamsSafe', () => {
   type Result = { id: string; age: number };
-  const params: Params = { id: 'id1', age: '10' };
-  const paramsResult = { id: 'id1', age: 10 };
-  const schema = z.object({ id: z.string(), age: zx.IntAsString });
+  const params: Params = { id: 'id1', age: '10', date: '2022-11-29' };
+  const paramsResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z };
+  const schema = z.object({ id: z.string(), age: zx.IntAsString, date: zx.DateAsString });
 
   test('parses params using an object', () => {
     const result = zx.parseParamsSafe(params, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
     });
     expect(result.success).toBe(true);
     if (result.success !== true) throw new Error('Parsing failed');
@@ -59,7 +61,7 @@ describe('parseParamsSafe', () => {
   });
 
   test('returns an error for invalid params', () => {
-    const badParams = { ...params, age: 'not a number' };
+    const badParams = { ...params, age: 'not a number', date: 'not a date' };
     const result = zx.parseParamsSafe(badParams, schema);
     expect(result.success).toBe(false);
     if (result.success !== false) throw new Error('Parsing should have failed');
@@ -70,18 +72,20 @@ describe('parseParamsSafe', () => {
 
 describe('parseQuery', () => {
   type Result = { id: string; age: number; friends?: string[] };
-  const queryResult = { id: 'id1', age: 10 };
+  const queryResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z };
   const schema = z.object({
     id: z.string(),
     age: zx.IntAsString,
+    date: zx.DateAsString,
     friends: z.array(z.string()).optional(),
   });
 
   test('parses URLSearchParams using an object', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const result = zx.parseQuery(search, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual(queryResult);
@@ -89,19 +93,20 @@ describe('parseQuery', () => {
   });
 
   test('parses URLSearchParams using a schema', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const result = zx.parseQuery(search, schema);
     expect(result).toStrictEqual(queryResult);
     type verify = Expect<Equal<typeof result, Result>>;
   });
 
   test('parses arrays from URLSearchParams', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     search.append('friends', 'friend1');
     search.append('friends', 'friend2');
     const result = zx.parseQuery(search, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual({
@@ -112,11 +117,12 @@ describe('parseQuery', () => {
   });
 
   test('parses query string from a Request using an object', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuery(request, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual(queryResult);
@@ -124,7 +130,7 @@ describe('parseQuery', () => {
   });
 
   test('parses query string from a Request using a schema', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuery(request, schema);
     expect(result).toStrictEqual(queryResult);
@@ -138,13 +144,14 @@ describe('parseQuery', () => {
 
   test('supports custom URLSearchParam parsers', () => {
     const search = new URLSearchParams(
-      `?id=id1&age=10&friends[]=friend1&friends[]=friend2`
+      `?id=id1&age=10&date=2022-11-29&friends[]=friend1&friends[]=friend2`
     );
     const result = zx.parseQuery(
       search,
       {
         id: z.string(),
         age: zx.IntAsString,
+        date: zx.DateAsString,
         friends: z.array(z.string()).optional(),
       },
       { parser: customArrayParser }
@@ -159,18 +166,20 @@ describe('parseQuery', () => {
 
 describe('parseQuerySafe', () => {
   type Result = { id: string; age: number; friends?: string[] };
-  const queryResult = { id: 'id1', age: 10 };
+  const queryResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z };
   const schema = z.object({
     id: z.string(),
     age: zx.IntAsString,
+    date: zx.DateAsString,
     friends: z.array(z.string()).optional(),
   });
 
   test('parses URLSearchParams using an object', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const result = zx.parseQuerySafe(search, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -180,7 +189,7 @@ describe('parseQuerySafe', () => {
   });
 
   test('parses URLSearchParams using a schema', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const result = zx.parseQuerySafe(search, schema);
     expect(result.success).toBe(true);
     if (result.success !== true) throw new Error('Parsing failed');
@@ -189,12 +198,13 @@ describe('parseQuerySafe', () => {
   });
 
   test('parses arrays from URLSearchParams', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     search.append('friends', 'friend1');
     search.append('friends', 'friend2');
     const result = zx.parseQuerySafe(search, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -207,11 +217,12 @@ describe('parseQuerySafe', () => {
   });
 
   test('parses query string from a Request using an object', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuerySafe(request, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -221,7 +232,7 @@ describe('parseQuerySafe', () => {
   });
 
   test('parses query string from a Request using a schema', () => {
-    const search = new URLSearchParams({ id: 'id1', age: '10' });
+    const search = new URLSearchParams({ id: 'id1', age: '10', date: '2022-11-29' });
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuerySafe(request, schema);
     expect(result.success).toBe(true);
@@ -231,7 +242,7 @@ describe('parseQuerySafe', () => {
   });
 
   test('returns an error for invalid query params', () => {
-    const badRequest = new Request(`http://example.com?id=id1&age=notanumber`);
+    const badRequest = new Request(`http://example.com?id=id1&age=notanumber&date=notadate`);
     const result = zx.parseQuerySafe(badRequest, schema);
     expect(result.success).toBe(false);
     if (result.success !== false) throw new Error('Parsing should have failed');
@@ -240,10 +251,11 @@ describe('parseQuerySafe', () => {
   });
 });
 
-const createFormRequest = (age: string = '10') => {
+const createFormRequest = (age: string = '10', date: string = '2022-11-29') => {
   const form = new FormData();
   form.append('id', 'id1');
   form.append('age', age);
+  form.append('date', date);
   form.append('consent', 'on');
   return new Request('http://example.com', { method: 'POST', body: form });
 };
@@ -252,14 +264,16 @@ describe('parseForm', () => {
   type Result = {
     id: string;
     age: number;
+    date: date;
     consent: boolean;
     friends?: string[];
     image?: NodeOnDiskFile;
   };
-  const formResult = { id: 'id1', age: 10, consent: true };
+  const formResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z, consent: true };
   const schema = z.object({
     id: z.string(),
     age: zx.IntAsString,
+    date: zx.DateAsString,
     consent: zx.CheckboxAsString,
     friends: z.array(z.string()).optional(),
     image: z.instanceof(NodeOnDiskFile).optional(),
@@ -270,6 +284,7 @@ describe('parseForm', () => {
     const result = await zx.parseForm(request, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
       image: z.instanceof(NodeOnDiskFile).optional(),
@@ -296,6 +311,7 @@ describe('parseForm', () => {
     const form = new FormData();
     form.append('id', 'id1');
     form.append('age', '10');
+    form.append('date', '2022-11-29');
     form.append('friends', 'friend1');
     form.append('friends', 'friend2');
     form.append('consent', 'on');
@@ -306,6 +322,7 @@ describe('parseForm', () => {
     const result = await zx.parseForm(request, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
       image: z.instanceof(NodeOnDiskFile).optional(),
@@ -349,10 +366,11 @@ describe('parseFormSafe', () => {
     friends?: string[];
     image?: NodeOnDiskFile;
   };
-  const formResult = { id: 'id1', age: 10, consent: true };
+  const formResult = { id: 'id1', age: 10, date: 2022-11-29T00:00:00.000Z, consent: true };
   const schema = z.object({
     id: z.string(),
     age: zx.IntAsString,
+    date: zx.DateAsString,
     consent: zx.CheckboxAsString,
     friends: z.array(z.string()).optional(),
     image: z.instanceof(NodeOnDiskFile).optional(),
@@ -363,6 +381,7 @@ describe('parseFormSafe', () => {
     const result = await zx.parseFormSafe(request, {
       id: z.string(),
       age: zx.IntAsString,
+      date: zx.DateAsString,
       consent: zx.CheckboxAsString,
       friends: z.array(z.string()).optional(),
       image: z.instanceof(NodeOnDiskFile).optional(),
@@ -398,6 +417,7 @@ describe('parseFormSafe', () => {
     if (result.success !== false) throw new Error('Parsing should have failed');
     expect(result.error.issues.length).toBe(1);
     expect(result.error.issues[0].path[0]).toBe('age');
+    expect(result.error.issues[1].path[0]).toBe('date');
   });
 
   test('parses objects keys of FormData from FormData', async () => {
