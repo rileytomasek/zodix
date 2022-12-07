@@ -103,7 +103,7 @@ Integrate with existing Zod schemas and models/controllers:
 
 ```ts
 // db.ts
-export const CreatNoteSchema = z.object({
+export const CreateNoteSchema = z.object({
   userId: z.string(),
   title: z.string(),
   category: NoteCategorySchema.optional(),
