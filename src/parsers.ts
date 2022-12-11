@@ -133,7 +133,7 @@ export async function parseForm<
       : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
     const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
-    return finalSchema.parse(data);
+    return finalSchema.parseAsync(data);
   } catch (error) {
     throw createErrorResponse(options);
   }
@@ -158,7 +158,7 @@ export async function parseFormSafe<
     : await request.clone().formData();
   const data = await parseFormData(formData, options?.parser);
   const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
-  return finalSchema.safeParse(data) as SafeParsedData<T>;
+  return finalSchema.safeParseAsync(data) as Promise<SafeParsedData<T>>;
 }
 
 /**
@@ -183,10 +183,7 @@ function isObjectEntry([, value]: [string, FormDataEntryValue]) {
 /**
  * Get the form data from a request as an object.
  */
-async function parseFormData(
-  formData: FormData,
-  customParser?: SearchParamsParser
-) {
+function parseFormData(formData: FormData, customParser?: SearchParamsParser) {
   const objectEntries = [...formData.entries()].filter(isObjectEntry);
   objectEntries.forEach(([key, value]) => {
     formData.set(key, JSON.stringify(value));
