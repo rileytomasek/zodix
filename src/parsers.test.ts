@@ -11,7 +11,7 @@ describe('parseParams', () => {
   type Result = { id: string; age: number };
   const params: Params = { id: 'id1', age: '10' };
   const paramsResult = { id: 'id1', age: 10 };
-  const objectSchema = { id: z.string(), age: zx.IntAsString };
+  const objectSchema = { id: z.string(), age: zx.intAsString() };
   const zodSchema = z.object(objectSchema);
 
   test('parses params using an object', () => {
@@ -41,13 +41,13 @@ describe('parseParamsSafe', () => {
   type Result = { id: string; age: number };
   const params: Params = { id: 'id1', age: '10' };
   const paramsResult = { id: 'id1', age: 10 };
-  const objectSchema = { id: z.string(), age: zx.IntAsString };
+  const objectSchema = { id: z.string(), age: zx.intAsString() };
   const zodSchema = z.object(objectSchema);
 
   test('parses params using an object', () => {
     const result = zx.parseParamsSafe(params, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
     });
     expect(result.success).toBe(true);
     if (result.success !== true) throw new Error('Parsing failed');
@@ -88,7 +88,7 @@ describe('parseQuery', () => {
   const queryResult = { id: 'id1', age: 10 };
   const objectSchema = {
     id: z.string(),
-    age: zx.IntAsString,
+    age: zx.intAsString(),
     friends: z.array(z.string()).optional(),
   };
   const zodSchema = z.object(objectSchema);
@@ -96,7 +96,7 @@ describe('parseQuery', () => {
   test('parses URLSearchParams using an object', () => {
     const result = zx.parseQuery(search, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual(queryResult);
@@ -115,7 +115,7 @@ describe('parseQuery', () => {
     search.append('friends', 'friend2');
     const result = zx.parseQuery(search, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual({
@@ -141,7 +141,7 @@ describe('parseQuery', () => {
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuery(request, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result).toStrictEqual(queryResult);
@@ -173,7 +173,7 @@ describe('parseQuery', () => {
       search,
       {
         id: z.string(),
-        age: zx.IntAsString,
+        age: zx.intAsString(),
         friends: z.array(z.string()).optional(),
       },
       { parser: customArrayParser }
@@ -205,7 +205,7 @@ describe('parseQuerySafe', () => {
   const queryResult = { id: 'id1', age: 10 };
   const zodSchema = z.object({
     id: z.string(),
-    age: zx.IntAsString,
+    age: zx.intAsString(),
     friends: z.array(z.string()).optional(),
   });
 
@@ -213,7 +213,7 @@ describe('parseQuerySafe', () => {
     const search = new URLSearchParams({ id: 'id1', age: '10' });
     const result = zx.parseQuerySafe(search, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -237,7 +237,7 @@ describe('parseQuerySafe', () => {
     search.append('friends', 'friend2');
     const result = zx.parseQuerySafe(search, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -268,7 +268,7 @@ describe('parseQuerySafe', () => {
     const request = new Request(`http://example.com?${search.toString()}`);
     const result = zx.parseQuerySafe(request, {
       id: z.string(),
-      age: zx.IntAsString,
+      age: zx.intAsString(),
       friends: z.array(z.string()).optional(),
     });
     expect(result.success).toBe(true);
@@ -316,8 +316,8 @@ describe('parseForm', () => {
   const formResult = { id: 'id1', age: 10, consent: true };
   const objectSchema = {
     id: z.string(),
-    age: zx.IntAsString,
-    consent: zx.CheckboxAsString,
+    age: zx.intAsString(),
+    consent: zx.checkboxAsString(),
     friends: z.array(z.string()).optional(),
     image: z.instanceof(NodeOnDiskFile).optional(),
   };
@@ -379,8 +379,8 @@ describe('parseForm', () => {
     });
     const result = await zx.parseForm(request, {
       id: z.string(),
-      age: zx.IntAsString,
-      consent: zx.CheckboxAsString,
+      age: zx.intAsString(),
+      consent: zx.checkboxAsString(),
       friends: z.array(z.string()).optional(),
       image: z.instanceof(NodeOnDiskFile).optional(),
     });
@@ -454,8 +454,8 @@ describe('parseFormSafe', () => {
   const formResult = { id: 'id1', age: 10, consent: true };
   const zodSchema = z.object({
     id: z.string(),
-    age: zx.IntAsString,
-    consent: zx.CheckboxAsString,
+    age: zx.intAsString(),
+    consent: zx.checkboxAsString(),
     friends: z.array(z.string()).optional(),
     image: z.instanceof(NodeOnDiskFile).optional(),
   });
@@ -465,8 +465,8 @@ describe('parseFormSafe', () => {
     const request = createFormRequest();
     const result = await zx.parseFormSafe(request, {
       id: z.string(),
-      age: zx.IntAsString,
-      consent: zx.CheckboxAsString,
+      age: zx.intAsString(),
+      consent: zx.checkboxAsString(),
       friends: z.array(z.string()).optional(),
       image: z.instanceof(NodeOnDiskFile).optional(),
     });

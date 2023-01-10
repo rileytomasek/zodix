@@ -7,10 +7,10 @@ import {
   parseFormSafe,
 } from './parsers';
 import {
-  BoolAsString,
-  CheckboxAsString,
-  IntAsString,
-  NumAsString,
+  boolAsString,
+  checkboxAsString,
+  intAsString,
+  numAsString,
 } from './schemas';
 
 export {
@@ -20,10 +20,9 @@ export {
   parseQuerySafe,
   parseForm,
   parseFormSafe,
-  BoolAsString,
-  CheckboxAsString,
-  IntAsString,
-  NumAsString,
+  boolAsString,
+  intAsString,
+  numAsString,
 };
 
 export const zx = {
@@ -33,8 +32,8 @@ export const zx = {
   parseQuerySafe,
   parseForm,
   parseFormSafe,
-  BoolAsString,
-  CheckboxAsString,
-  IntAsString,
-  NumAsString,
+  boolAsString,
+  checkboxAsString,
+  intAsString,
+  numAsString,
 };
