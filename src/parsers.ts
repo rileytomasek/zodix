@@ -39,6 +39,14 @@ type SafeParsedData<T extends ZodRawShape | ZodTypeAny> = T extends ZodTypeAny
   : never;
 
 /**
+ * A Type Guard to check object is a ZodType.
+ * `instanceof` is not always reliable when bundled.
+ * `parse` is the only method we require to determine it is a Zod object.
+ */
+const isZodType = (input: ZodRawShape | ZodTypeAny): input is ZodType =>
+  typeof input.parse === 'function';
+
+/**
  * Parse and validate Params from LoaderArgs or ActionArgs. Throws an error if validation fails.
  * @param params - A Remix Params object.
  * @param schema - A Zod object shape or object schema to validate.
@@ -50,7 +58,7 @@ export function parseParams<T extends ZodRawShape | ZodTypeAny>(
   options?: Options
 ): ParsedData<T> {
   try {
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parse(params);
   } catch (error) {
     throw createErrorResponse(options);
@@ -67,7 +75,7 @@ export function parseParamsSafe<T extends ZodRawShape | ZodTypeAny>(
   params: Params,
   schema: T
 ): SafeParsedData<T> {
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
 }
 
@@ -87,7 +95,7 @@ export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
       ? request
       : getSearchParamsFromRequest(request);
     const params = parseSearchParams(searchParams, options?.parser);
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parse(params);
   } catch (error) {
     throw createErrorResponse(options);
@@ -109,7 +117,7 @@ export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
     ? request
     : getSearchParamsFromRequest(request);
   const params = parseSearchParams(searchParams, options?.parser);
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
 }
 
@@ -132,7 +140,7 @@ export async function parseForm<
       ? request
       : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parseAsync(data);
   } catch (error) {
     throw createErrorResponse(options);
@@ -157,7 +165,7 @@ export async function parseFormSafe<
     ? request
     : await request.clone().formData();
   const data = await parseFormData(formData, options?.parser);
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParseAsync(data) as Promise<SafeParsedData<T>>;
 }
 
