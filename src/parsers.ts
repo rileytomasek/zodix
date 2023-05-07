@@ -25,7 +25,7 @@ type Options<Parser = SearchParamsParser> = {
  * using `instanceof` to check the type of a `schema` param.
  */
 const isZodType = (input: ZodRawShape | ZodTypeAny): input is ZodTypeAny => {
-  return typeof input._parse === 'function';
+  return typeof input.parse === 'function';
 }
 
 /**
