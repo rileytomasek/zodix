@@ -141,7 +141,7 @@ export async function parseForm<
       : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
     const finalSchema = isZodType(schema) ? schema : z.object(schema);
-    return finalSchema.parseAsync(data);
+    return await finalSchema.parseAsync(data);
   } catch (error) {
     throw createErrorResponse(options);
   }

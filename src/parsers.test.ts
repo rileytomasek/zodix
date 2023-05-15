@@ -429,17 +429,17 @@ describe('parseForm', () => {
 
   test('throws for invalid FormData using an object', async () => {
     const badRequest = createFormRequest('notanumber');
-    expect(() => zx.parseQuery(badRequest, objectSchema)).toThrow();
+    await expect(zx.parseForm(badRequest, objectSchema)).rejects.toBeInstanceOf(Response)
   });
 
   test('throws for invalid FormData using a schema', async () => {
     const badRequest = createFormRequest('notanumber');
-    expect(() => zx.parseQuery(badRequest, zodSchema)).toThrow();
+    await expect(zx.parseForm(badRequest, zodSchema)).rejects.toBeInstanceOf(Response)
   });
 
   test('throws for invalid FormData using an async schema', async () => {
     const badRequest = createFormRequest('notanumber');
-    expect(() => zx.parseQuery(badRequest, asyncSchema)).toThrow();
+    await expect(zx.parseForm(badRequest, asyncSchema)).rejects.toBeInstanceOf(Response)
   });
 });
 
