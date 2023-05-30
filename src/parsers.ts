@@ -1,4 +1,4 @@
-import { z, ZodType } from 'zod';
+import { z } from 'zod';
 import { createErrorResponse } from './errors';
 import type { LoaderArgs } from '@remix-run/server-runtime';
 import type {
@@ -19,6 +19,14 @@ type Options<Parser = SearchParamsParser> = {
   /** Custom URLSearchParams parsing function. */
   parser?: Parser;
 };
+
+/**
+ * Type assertion function avoids problems with some bundlers when
+ * using `instanceof` to check the type of a `schema` param.
+ */
+const isZodType = (input: ZodRawShape | ZodTypeAny): input is ZodTypeAny => {
+  return typeof input.parse === 'function';
+}
 
 /**
  * Generic return type for parseX functions.
@@ -50,7 +58,7 @@ export function parseParams<T extends ZodRawShape | ZodTypeAny>(
   options?: Options
 ): ParsedData<T> {
   try {
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parse(params);
   } catch (error) {
     throw createErrorResponse(options);
@@ -67,7 +75,7 @@ export function parseParamsSafe<T extends ZodRawShape | ZodTypeAny>(
   params: Params,
   schema: T
 ): SafeParsedData<T> {
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
 }
 
@@ -87,7 +95,7 @@ export function parseQuery<T extends ZodRawShape | ZodTypeAny>(
       ? request
       : getSearchParamsFromRequest(request);
     const params = parseSearchParams(searchParams, options?.parser);
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parse(params);
   } catch (error) {
     throw createErrorResponse(options);
@@ -109,7 +117,7 @@ export function parseQuerySafe<T extends ZodRawShape | ZodTypeAny>(
     ? request
     : getSearchParamsFromRequest(request);
   const params = parseSearchParams(searchParams, options?.parser);
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParse(params) as SafeParsedData<T>;
 }
 
@@ -132,7 +140,7 @@ export async function parseForm<
       ? request
       : await request.clone().formData();
     const data = await parseFormData(formData, options?.parser);
-    const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+    const finalSchema = isZodType(schema) ? schema : z.object(schema);
     return finalSchema.parseAsync(data);
   } catch (error) {
     throw createErrorResponse(options);
@@ -157,7 +165,7 @@ export async function parseFormSafe<
     ? request
     : await request.clone().formData();
   const data = await parseFormData(formData, options?.parser);
-  const finalSchema = schema instanceof ZodType ? schema : z.object(schema);
+  const finalSchema = isZodType(schema) ? schema : z.object(schema);
   return finalSchema.safeParseAsync(data) as Promise<SafeParsedData<T>>;
 }
 
