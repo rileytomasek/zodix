@@ -30,7 +30,7 @@
     "esbuild": "^0.15.10",
     "eslint": "^8.25.0",
     "eslint-config-prettier": "^8.5.0",
-    "np": "^7.6.2",
+    "np": "7.6.3",
     "prettier": "^2.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -44,8 +44,10 @@
     "zod": "3.x"
   },
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org"
   },
+  "packageManager": "yarn@1.22.19",
   "prettier": {
     "singleQuote": true
   }
