@@ -1,6 +1,6 @@
 {
   "name": "zodix",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Parse Remix loaders and actions with Zod",
   "main": "dist/index.js",
   "files": [
