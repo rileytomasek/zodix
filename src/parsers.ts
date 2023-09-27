@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createErrorResponse } from './errors';
-import type { LoaderArgs } from '@remix-run/server-runtime';
+import type { DataFunctionArgs } from '@remix-run/server-runtime';
 import type {
   output,
   SafeParseReturnType,
@@ -9,7 +9,7 @@ import type {
   ZodTypeAny,
 } from 'zod';
 
-type Params = LoaderArgs['params'];
+type Params = DataFunctionArgs['params'];
 
 type Options<Parser = SearchParamsParser> = {
   /** Custom error message for when the validation fails. */
