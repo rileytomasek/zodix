@@ -40,7 +40,7 @@
     "zod": "^3.19.1"
   },
   "peerDependencies": {
-    "@remix-run/server-runtime": "1.x",
+    "@remix-run/server-runtime": "1.x || 2.x",
     "zod": "3.x"
   },
   "publishConfig": {
